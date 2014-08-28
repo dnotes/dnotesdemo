@@ -1,0 +1,76 @@
+<?php
+
+function dnotesdemo_form_user_login_block_alter(&$form, &$form_state) {
+  $form['name']['#default_value'] = 'guest';
+  $form['pass']['#post_render'] = array('dnotesdemo_guest_pass');
+  unset ($form['links']);
+}
+
+function dnotesdemo_guest_pass($form) {
+  $form = str_replace('input type="password"', 'input type="password" value="guest"', $form);
+  return($form);
+}
+
+function dnotesdemo_form_skinr_lite_skin_form_alter(&$form, &$form_state) {
+  if (!empty($form['skinr_lite_colors']['scheme'])) {
+    if (user_access('administer site configuration')) {
+      $newschemes = db_query('SELECT * FROM {dnotesdemo_colorschemes}')->fetchAllKeyed();
+      if (!empty($newschemes)) {
+        foreach ($newschemes as $k => $v) {
+          $newschemes[$k] = unserialize($v);
+          $newschemes_options[$k] = $k;
+        }
+        $form['skinr_lite_colors']['scheme']['#options'] += $newschemes_options;
+        $form['skinr_lite_colors']['scheme']['#attached']['js'][1]['data']['color']['schemes'] += $newschemes;
+        $form['skinr_lite_colors']['scheme']['#prefix'] = '<div id="dnotesdemo-schemechooser">';
+        $form['skinr_lite_colors']['scheme']['#suffix'] = '</div>';
+        $form['skinr_lite_colors']['actions']['export_colors'] = array(
+          '#type' => 'markup',
+          '#markup' => '<a id="skinr-lite-export-colors" href="#" title="' . t('Export the colors for use as a color scheme') . '">' . t('Export colors') . '</a>',
+        );
+        $form['skinr_lite_colors']['actions']['delete'] = array(
+          '#type' => 'submit',
+          '#value' => t('Delete'),
+          '#ajax' => array(
+            'callback' => 'dnotesdemo_delete_custom_scheme',
+            'wrapper' => 'block-system-main',
+            'progress' => array('type' => 'throbber', 'message' => t('...')),
+            //'method' => 'html',
+          ),
+        );
+      }
+    }
+    else {
+      array_unshift($form['#submit'], 'dnotesdemo_skinrlite_submit');
+    }
+  }
+}
+
+function dnotesdemo_skinrlite_submit($form, $form_state) {
+  if ($form_state['clicked_button']['#value'] == t('Done!') || $form_state['clicked_button']['#value'] == t('Save colors')) {
+    $v = $form_state['values'];
+    if (empty($v['scheme']) && db_query('SELECT COUNT(*) FROM {dnotesdemo_colorschemes}')->fetchField() < 500) {
+      $palette = serialize($v['palette']);
+      $guid = uniqid('', true);
+      if (!db_query('SELECT guid FROM {dnotesdemo_colorschemes} WHERE palette = ?', array($palette))->fetchField()) {
+        db_insert('dnotesdemo_colorschemes')
+          ->fields(array(
+            'guid' => $guid,
+            'palette' => $palette,
+          ))
+          ->execute();
+      }
+    }
+  }
+}
+
+function dnotesdemo_delete_custom_scheme($form, $form_state) {
+  $v = $form_state['values']['scheme'];
+  db_delete('dnotesdemo_colorschemes')
+    ->condition('guid', $v)
+    ->execute();
+  unset($form['skinr_lite_colors']['scheme']['#options'][$v]);
+  return $form['skinr_lite_colors']['scheme'];
+}
+
+

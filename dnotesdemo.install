@@ -1,0 +1,29 @@
+<?php
+
+function dnotesdemo_schema() {
+  $schema['dnotesdemo_colorschemes'] = array(
+    'description' => 'Temporary storage for color schemes.',
+    'fields' => array(
+      'guid' => array(
+        'description' => 'A unique id',
+        'type' => 'char',
+        'length' => 23,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'palette' => array(
+        'description' => 'Serialized palette',
+        'type' => 'varchar',
+        'length' => 1000,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'indexes' => array(
+      'palette' => array('palette'),
+    ),
+    'primary key' => array('guid'),
+  );
+  return $schema;
+}
+
