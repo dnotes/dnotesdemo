@@ -22,8 +22,7 @@ function dnotesdemo_form_skinr_lite_skin_form_alter(&$form, &$form_state) {
         }
         $form['skinr_lite_colors']['scheme']['#options'] += $newschemes_options;
         $form['skinr_lite_colors']['scheme']['#attached']['js'][1]['data']['color']['schemes'] += $newschemes;
-        $form['skinr_lite_colors']['scheme']['#prefix'] = '<div id="dnotesdemo-schemechooser">';
-        $form['skinr_lite_colors']['scheme']['#suffix'] = '</div>';
+        $form['skinr_lite_colors']['scheme']['#suffix'] = '<div id="oingo-boingo"></div>';
         $form['skinr_lite_colors']['actions']['export_colors'] = array(
           '#type' => 'markup',
           '#markup' => '<a id="skinr-lite-export-colors" href="#" title="' . t('Export the colors for use as a color scheme') . '">' . t('Export colors') . '</a>',
@@ -33,9 +32,9 @@ function dnotesdemo_form_skinr_lite_skin_form_alter(&$form, &$form_state) {
           '#value' => t('Delete'),
           '#ajax' => array(
             'callback' => 'dnotesdemo_delete_custom_scheme',
-            'wrapper' => 'block-system-main',
+            'wrapper' => 'oingo-boingo',
             'progress' => array('type' => 'throbber', 'message' => t('...')),
-            //'method' => 'html',
+            'method' => 'html',
           ),
         );
       }
@@ -65,12 +64,11 @@ function dnotesdemo_skinrlite_submit($form, $form_state) {
 }
 
 function dnotesdemo_delete_custom_scheme($form, $form_state) {
-  $v = $form_state['values']['scheme'];
+  $value = $form_state['values']['scheme'];
   db_delete('dnotesdemo_colorschemes')
-    ->condition('guid', $v)
+    ->condition('guid', $value)
     ->execute();
-  unset($form['skinr_lite_colors']['scheme']['#options'][$v]);
-  return $form['skinr_lite_colors']['scheme'];
+  return t('Deleted @value', array('@value' => $value));
 }
 
 
